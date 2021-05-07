@@ -1,0 +1,55 @@
+#+TITLE: Library
+
+
+
+https://en.wikipedia.org/wiki/Universal_Product_Code
+
+https://openlibrary.org/
+
+https://github.com/robbintt/barcode-scanner
+
+Leds to show where the books are located
+https://www.noisebridge.net/wiki/Bookshelves
+
+Books of interest
+https://www.noisebridge.net/wiki/Resources/Library#Books_of_Interest_-_Aestetix
+
+* Conversion af Microsoft Access DB (.mdb fil)
+https://www.mdbopener.com/
+
+* macos
+brew cask install anaconda
+brew cask install db-browser-for-sqlite
+
+* library applications
+** library-org
+Homemade python2/flask application
+https://library.noisebridge.net/
+https://www.noisebridge.net/wiki/Resources/Library
+https://github.com/noisebridge/library-org
+** Circulation
+python3, using flask. This app allows users to borrow books. Could replace
+library-org with time
+https://github.com/not7cd/circulation
+
+See the db models:
+https://github.com/not7cd/circulation/blob/master/circulation/models.py
+
+** koha
+https://koha-community.org/
+** evergren-ils
+
+https://evergreen-ils.org/
+
+** opendb
+The Open Media Collectors Database (OpenDb) is a PHP and MySQL based inventory
+application that allows you to easily catalog and lend media-related information
+https://github.com/pellcorp/opendb
+
+* Convert logo; reduce size and give it opacity
+451x means a with of 451pixel, keeping aspect ratio. Thus x451 is height of 451 pixel.
+
+convert logo.jpg -alpha set -channel A -evaluate set 10% -resize 451x  logo_opacity.png
+
+background logo is in ./static/dist/images/Nb_2169_sticker-10p-opacity.png
+This is set in the .css file
