@@ -60,7 +60,7 @@ app.debug = True
 app.config["SQLALCHEMY_DATABASE_URI"] = sqlite_db
 db = SQLAlchemy(app)
 
-PAGINATE_BY_HOWMANY = 15
+PAGINATE_BY_HOWMANY = 50
 
 # == recaptcha ==
 # recaptcha disabled - it is ready to be implemented now
@@ -393,7 +393,9 @@ def explore():
 
 
 @app.route("/index/<int:page>", methods=["GET", "POST"])
-def index(page=1):
+@app.route("/index/<int:page>/<string:sort_by>" )
+@app.route("/<string:sort_by>" )
+def index(page=1,sort_by="title"):
     """Show an index of books, provide some basic searchability.
 
     The two features coded here, pagination and search, will probably be superceded
@@ -410,7 +412,7 @@ def index(page=1):
 
     if request.method == "POST":
         s = request.form["search"]
-        return redirect(url_for("index", page=1, s=s))
+        return redirect(url_for("index", page=1, s=s, sort_by=sort_by))
 
     # preserve search throughout navigation
     s = request.args.get("s")
@@ -419,8 +421,7 @@ def index(page=1):
     # (make this more general for an all fields search)
     if s:
         books = (
-            db.session.query(Book, Location).join(Location, Book.location == Location.id)
-            .order_by(Book.title.asc())
+            db.session.query(Book, Location).join(Location, Book.location == Location.id)\
             .filter(
                 or_(
                     Book.title.contains(s),
@@ -428,17 +429,23 @@ def index(page=1):
                     Book.subjects.contains(s),
                 )
             )
-            .paginate(page=page, per_page=PAGINATE_BY_HOWMANY, error_out=False)
         )
 
-    # return all books, currently sort by title ascending.
+    # return all books
     else:
         books = db.session.query(Book, Location)\
-            .join(Location, Book.location == Location.id)\
-            .order_by(Book.title.asc())\
-            .paginate(page=page, per_page=PAGINATE_BY_HOWMANY, error_out=False)
+            .join(Location, Book.location == Location.id)
 
-    return render_template("index.html", books=books, s=s)
+    if sort_by == "author":
+        books = books.order_by(Book.authors.asc())
+    elif sort_by == "location":
+        books = books.order_by(Location.label_name.asc())
+    else:  # sort_by == "title":
+        books = books.order_by(Book.title.asc())
+
+    return render_template("index.html",
+                           books=books.paginate(page=page, per_page=PAGINATE_BY_HOWMANY, error_out=False),
+                           s=s, sort_by=sort_by)
 
 
 if __name__ == "__main__":

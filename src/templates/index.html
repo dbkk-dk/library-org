@@ -25,14 +25,14 @@
 
           <span class="pull-left">
           {% if books.has_prev %}
-            <a href="{{ url_for(request.endpoint, page=books.prev_num, s=s) }}">Previous Page</a>
+            <a href="{{ url_for(request.endpoint, page=books.prev_num, s=s, sort_by=sort_by) }}">Previous Page</a>
           {% else %}
             <span>Previous Page</span>
           {% endif %}
           </span>
           <span class="pull-right">
           {% if books.has_next %}
-            <a href="{{ url_for(request.endpoint, page=books.next_num, s=s) }}">Next Page</a>
+            <a href="{{ url_for(request.endpoint, page=books.next_num, s=s, sort_by=sort_by) }}">Next Page</a>
           {% else %}
             <span>Next Page</span>
           {% endif %}
@@ -44,7 +44,8 @@
             {% if page == books.page %}
               <span class="paginate-pagenumber-container">{{page}}</span>
             {% else %}
-              <a class="paginate-pagenumber-container" href="{{ url_for(request.endpoint, page=page, s=s) }}">{{page}}</a>
+              <a class="paginate-pagenumber-container"
+                 href="{{url_for(request.endpoint, page=page, s=s, sort_by=sort_by) }}">{{page}}</a>
             {% endif %}
             {% if page % 20 == 0 %}
               <br \>
@@ -55,11 +56,16 @@
 
     </div>
 
-
       <div class="row">
-        <span class="book-section-headers col-xs-5">Title</span>
-        <span class="book-section-headers col-xs-3">Author</span>
-        <span class="book-section-headers col-xs-1">Location</span>
+        <span class="book-section-headers col-xs-5">
+          <a class="btn btn-primary" href="{{ url_for('index', page=books.page, s=s, sort_by='title') }}">Title</a>
+        </span>
+        <span class="book-section-headers col-xs-3">
+          <a class="btn btn-primary" href="{{ url_for('index', page=books.page, s=s, sort_by='author') }}">Author</a>
+        </span>
+        <span class="book-section-headers col-xs-1">
+          <a class="btn btn-primary" href="{{ url_for('index', page=books.page, s=s, sort_by='location') }}">Location</a>
+        </span>
         <span class="book-section-headers text-right col-xs-3">Subjects</span>
       </div>
 
