@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql.expression import func
-from sqlalchemy import or_
+from sqlalchemy import or_, asc, desc
 from sqlalchemy.exc import IntegrityError
 
 from flask_wtf import FlaskForm
@@ -484,52 +484,44 @@ def explore():
 
 @app.route("/index/<int:page>", methods=["GET", "POST"])
 def index(page=1):
-    """Show an index of books, provide some basic searchability.
-
-    The two features coded here, pagination and search, will probably be superceded
-    by a different implementation.
-
-    Options:
-        javascript implementation with handlebars or moustache templating systems.
-        any implementation that consumes this data from an rest/json API.
-        the API is necessary anyways to allow others to interact with the app.
-        allow real time search and weighted search.
-        current search is too simple - sqlite query based substring search.
-
-    """
+    """Show an index of books, provide some basic searchability."""
 
     if request.method == "POST":
         s = request.form["search"]
         return redirect(url_for("index", page=1, s=s))
 
-    # preserve search throughout navigation
+    # Get the search term and number of items per page from the request
     s = request.args.get("s")
+    per_page = request.args.get("per_page", PAGINATE_BY_HOWMANY, type=int)
+    sort_by = request.args.get("sort_by", "title")  # Default sort by title
+    sort_order = request.args.get("sort_order", "asc")  # Default order is ascending
 
-    # do a search if you have a search term
-    # (make this more general for an all fields search)
+    # Set sorting direction (ascending or descending)
+    if sort_order == "asc":
+        sort_direction = asc
+    else:
+        sort_direction = desc
+
+    # Create the query to select books
+    query = db.session.query(Book, Location).join(Location, Book.location == Location.id)
+   # Apply filtering if a search term is provided
     if s:
-        books = (
-            db.session.query(Book, Location).join(Location, Book.location == Location.id)
-            .order_by(Book.title.asc())
-            .filter(
-                or_(
-                    Book.title.contains(s),
-                    Book.authors.contains(s),
-                    Book.subjects.contains(s),
-                    Book.isbn.contains(s),
-                )
+        query = query.filter(
+            or_(
+                Book.title.contains(s),
+                Book.authors.contains(s),
+                Book.subjects.contains(s),
+                Book.isbn.contains(s),
             )
-            .paginate(page=page, per_page=PAGINATE_BY_HOWMANY, error_out=False)
         )
 
-    # return all books, currently sort by title ascending.
-    else:
-        books = db.session.query(Book, Location)\
-            .join(Location, Book.location == Location.id)\
-            .order_by(Book.title.asc())\
-            .paginate(page=page, per_page=PAGINATE_BY_HOWMANY, error_out=False)
+    # Apply sorting based on the 'sort_by' and 'sort_order' parameters
+    query = query.order_by(sort_direction(getattr(Book, sort_by)))
 
-    return render_template("index.html", books=books, s=s)
+    # Execute the pagination
+    books = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return render_template("index.html", books=books, s=s, sort_by=sort_by, sort_order=sort_order, per_page=per_page)
 
 
 @app.route('/login', methods = ['POST', 'GET'])
