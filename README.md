@@ -2,10 +2,12 @@
 
 ## Project Status
 
-Missing features
-- manual `create a new book` page. The current way to create a new entry, is to `submit-by-isbn` which tries retrieve info about a book from google-books and openlibrary.org.
+### Missing features
 - upload files(pdf) which then can be found from the `index` page,
-- get rating from goodreads and link
+
+### bugs
+- Updating a book without ISBN result in an error
+- creating a new book without ISBN result in an error
 
 ## docker
 Remember to copy `library.cfg_EXAMPLE` to `library.cfg` and change env variables as needed.
