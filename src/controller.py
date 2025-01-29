@@ -7,15 +7,15 @@ from sqlalchemy.exc import IntegrityError
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, validators
 
-from request_book import reorganize_openlibrary_data
-
 import requests
 import json
 
 import configparser
 import os
 from pathlib import Path
+import re
 import sys
+import pprint
 
 try:
     p = Path(__file__).absolute()
@@ -66,7 +66,7 @@ app.debug = True
 app.config["SQLALCHEMY_DATABASE_URI"] = sqlite_db
 db = SQLAlchemy(app)
 
-PAGINATE_BY_HOWMANY = 15
+PAGINATE_BY_HOWMANY = 20
 
 # == recaptcha ==
 # recaptcha disabled - it is ready to be implemented now
@@ -84,7 +84,7 @@ class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     label_name = db.Column(db.String(20), unique=True)
     full_name = db.Column(db.String(100), unique=False)
-    books = db.relationship("Book", backref="person", lazy="dynamic")
+    # books = db.relationship("Book", backref="person", lazy="dynamic")
 
     def __init__(self, label_name, full_name):
         self.label_name = label_name
@@ -158,13 +158,6 @@ class Book(db.Model):
         return "<Title: >".format(self.title)
 
 
-class BookForm(FlaskForm):
-    olid = StringField("olid", [validators.Length(min=4, max=20)])
-    isbn = StringField(
-        "isbn", [validators.Length(min=10, max=13), validators.Regexp(r"^[0-9X]*$")]
-    )
-
-
 class LocationForm(FlaskForm):
     # attach form.location.choices = location_options after instantiation!!
     # http://wtforms.readthedocs.io/en/latest/fields.html#wtforms.fields.SelectField
@@ -177,12 +170,6 @@ class NewLocationForm(FlaskForm):
     location_entry_secret = StringField(
         "location_entry_secret", validators=[validators.Length(min=1, max=200)]
     )
-
-
-@app.route("/test")
-def test():
-    """Test frontend integration"""
-    return render_template("test.html")
 
 
 @app.route("/index")
@@ -253,6 +240,7 @@ def fetch_book_details(isbn):
     # Return the combined details
     return book_details
 
+
 @app.route("/add_book", methods=["GET", "POST"])
 def add_book():
     """Add a new book to the system by entering ISBN or manually filling fields."""
@@ -273,8 +261,6 @@ def add_book():
 
             # Fetch book details from both Google Books and OpenLibrary
             book_data = fetch_book_details(isbn)
-            pprint.pprint(book_data)
-
             if not book_data:
                 return "Book not found. Please check the ISBN or enter details manually."
 
