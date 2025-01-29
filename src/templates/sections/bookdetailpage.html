@@ -32,40 +32,29 @@
         <p><span class="detail-view-content">Author(s): </span>{{ book.authors }}</p>
         <p><span class="detail-view-content">Published: </span>{{ book.publish_date }}</p>
 
+        {% if book.description %}
+          <div class="mt-3">
+            <h5>Description:</h5>
+            <p>{{ book.description }}</p>
+          </div>
+        {% endif %}
 
         <br>
-        <p class="text-underline"><u>Details:</u>
-            <!-- <p><span class="detail-view-content">Dewey Decimal: </span>{{ book.dewey_decimal_class }}</p> -->
         <p><span class="detail-view-content">Subjects: </span>{{ book.subjects }}</p>
         <p><span class="detail-view-content">Pages: </span>{{ book.number_of_pages }}</p>
 
 
-        <br>
-        <p class="text-underline"><u>External Resources:</u>
-
         <p><span class="detail-view-content"></span>
         {% if book.isbn %}
-          <a href="https://www.amazon.com/gp/search?index=books&field-isbn={{ book.isbn }}" target="_blank">Amazon Search</a>
-        {% else %}
-          <a href="https://google.com/search?q={{ book.title }}+{{ book.authors }}" target="_blank">Google Search</a>
+          <a href="https://www.amazon.com/gp/search?index=books&field-isbn={{ book.isbn }}" target="_blank"> ISBN: {{ book.isbn }}</a>
         {% endif %}
-
-        {% if book.olid %}
-        <p><span class="detail-view-content"></span>
-          <a href="https://openlibrary.org/search?q={{ book.olid }}" target="_blank">OpenLibrary Search</a></p>
-        {% endif %}
+        <br>
+        <a href="https://google.com/search?q={{ book.title }}+{{ book.authors }}" target="_blank">Google Search</a>
 
         {% if book.openlibrary_preview_url %}
         <p><span class="detail-view-content"></span>
           <a href="{{ book.openlibrary_preview_url }}" target="_blank">Online Preview</a>
         {% endif %}
-
-
-        <br>
-        <br>
-        <p class="text-underline"><u>Control Numbers:</u>
-        <p><span class="detail-view-content">ISBN: </span>{{ book.isbn }}</p>
-        <p><span class="detail-view-content">OLID: </span>{{ book.olid }}</p>
 
         {% if location_display %}
         <br>
