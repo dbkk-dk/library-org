@@ -331,14 +331,98 @@ def add_book():
     # locations = LibraryLocation.query.all()  # Fetch available library locations
     return render_template("add_book.html", location_form=location_form)
 
+@app.route("/edit_book/<int:id>", methods=["GET", "POST"])
+def edit_book(id):
+    """Edit an existing book's details with an ISBN search option."""
+    book = Book.query.get(id)
 
+    if book is None:
+        flash(f"Book with ID {id} does not exist.", "danger")
+        return redirect(url_for("index"))
 
+    # Fetch available locations
+    locations = Location.query.order_by("label_name").all()
+    location_choices = [(l.id, f"{l.label_name}, {l.full_name}") for l in locations]
+
+    if request.method == "POST":
+        if "search_isbn" in request.form:
+            # Fetch book details by ISBN and overwrite fields only if they have meaningful data
+            isbn = str(request.form.get("isbn", "")).strip()
+            if not check_isbn(isbn):
+                flash("Invalid ISBN. Please enter a valid 10 or 13-digit ISBN.", "danger")
+                return redirect(url_for("edit_book", id=book.id))
+
+            book_data = fetch_book_details(isbn)
+            if not book_data:
+                flash("Book not found. Please enter details manually.", "warning")
+                return redirect(url_for("edit_book", id=book.id))
+
+            # Set ISBN, in case it was missing in the DB
+            book_data["isbn"] = isbn
+            # Only overwrite fields if they contain meaningful data
+            if book_data.get("title"): book.title = book_data["title"]
+            if book_data.get("authors"): book.authors = ", ".join(book_data.get("authors", []))
+            if book_data.get("publish_date"): book.publish_date = book_data["publish_date"]
+            if book_data.get("subjects"): book.subjects = ", ".join(book_data.get("subjects", []))
+            if book_data.get("thumbnail"): book.openlibrary_medcover_url = book_data["thumbnail"]
+            if book_data.get("preview_link"): book.openlibrary_preview_url = book_data["preview_link"]
+            if book_data.get("number_of_pages"): book.number_of_pages = book_data["number_of_pages"]
+
+            flash("Book details updated from ISBN search!", "info")
             return render_template(
+                "edit_book.html",
+                book=book,
+                locations=location_choices
             )
 
+        elif "submit_book" in request.form:
+            # Ensure ISBN is unique (excluding the current book)
+            isbn = str(request.form.get("isbn", "")).strip()
+            existing_book = Book.query.filter(Book.isbn == isbn, Book.id != book.id).first()
+            if existing_book:
+                flash("A book with this ISBN already exists.", "danger")
+                return redirect(url_for("detail", id=existing_book.id))
+
+            # Update book details from form
+            book.isbn = isbn
+            book.title = request.form.get("title", "").strip()
+            book.authors = request.form.get("authors", "").strip()
+            book.publish_date = request.form.get("year", "").strip()
+            book.subjects = request.form.get("description", "").strip()
+            book.openlibrary_medcover_url = request.form.get("thumbnail_url", "").strip()
+            book.openlibrary_preview_url = request.form.get("openlibrary_preview_url", "").strip()
+            book.number_of_pages = request.form.get("number_of_pages", "").strip()
+
+            # Handle location selection
+            location_id = request.form.get("location")
+            book.location = int(location_id) if location_id and location_id != "-1" else None
+
+            # Commit the changes
+            db.session.commit()
+            flash("Book details updated successfully!", "success")
+            return redirect(url_for("detail", id=book.id))
+
     return render_template(
+        "edit_book.html",
+        book=book,
+        locations=location_choices
     )
 
+
+@app.route("/delete_book/<int:id>", methods=["POST"])
+def delete_book(id):
+    """Delete a book from the database."""
+    book = Book.query.get(id)
+
+    if book is None:
+        flash(f"Book with ID {id} does not exist.", "danger")
+        return redirect(url_for("index"))
+
+    db.session.delete(book)
+    db.session.commit()
+
+    flash("Book deleted successfully!", "success")
+    return redirect(url_for("index", page=1))
 
 @app.route("/new_location", methods=["GET", "POST"])
 def new_location(new_location=None, new_location_submit_secret=None):
@@ -383,31 +467,20 @@ def detail(id=1):
     newbookflash = session.get("newbookflash", False)
     session.pop("newbookflash", None)
     book = Book.query.get(id)
+
     if book is None:
         return f"<h1>book id {id} does not exist</h1>"
 
-    # dynamically populate locations into SelectField
-    location_choices = [
-        (l.id, f"{l.label_name}, {l.full_name}" ) for l in Location.query.order_by("label_name")
-    ]
-    location_form = LocationForm()
+    # Fetch available locations
+    locations = Location.query.order_by("label_name").all()
 
-    if request.method == "POST" and session.get("logged_in", False):
-        book.location = int(request.form["location"])
-        db.session.commit()
-    elif request.method == "POST":
-        return '<h1>You are not logged in.</h1>'
-
-    location_form.location.choices = location_choices + [
-        (-1, u"-- Add the correct location --")
-    ]
+    # Set the location to be displayed
+    location_display = None
     if book.location:
-        location_form.location.default = book.location
-    else:
-        location_form.location.default = -1  # give a prompt in the SelectField
-    location_form.process()
+        location_display = next((l for l in locations if l.id == book.location), None)
+
     return render_template(
-        "detail.html", book=book, newbookflash=newbookflash, location_form=location_form
+        "detail.html", book=book, newbookflash=newbookflash, location_display=location_display
     )
 
 

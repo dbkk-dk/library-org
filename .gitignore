@@ -7,3 +7,5 @@ database/books.sqlite
 tmp/*
 venv/*
 
+/.venv/
+/.direnv/

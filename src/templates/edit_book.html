@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block inlinecss %}
+<style type="text/css">
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-control {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+  }
+  .btn {
+    padding: 10px 20px;
+    margin-top: 10px;
+  }
+  .d-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+
+<!-- Navigate previous/next book. No /real/ check that id actually exists -->
+{% if book.id %}
+<nav>
+    <ul class="nav justify-content-center">
+        <li>
+            <a href="{{ url_for('edit_book', id=book.id-1) }}">Prev&nbsp;</a>
+        </li>
+        <li>
+            <a href="{{ url_for('edit_book', id=book.id+1) }}">Next&nbsp;</a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+
+<h3 class="explanation-header">Edit Book</h3>
+
+<div class="row">
+<div class="col-xs-8 col-xs-offset-2">
+    <form method="POST" action="{{ url_for('edit_book', id=book.id) }}">
+
+      <div class="form-group">
+        <label for="isbn">ISBN</label>
+        <input type="text" class="form-control" id="isbn" name="isbn" value="{{ book.isbn }}">
+        <button type="submit" name="search_isbn" class="btn btn-primary">Search ISBN - This will override fields, but you can always go back</button>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ book.title }}">
+      </div>
+
+      <div class="form-group">
+        <label for="authors">Author(s)</label>
+        <input type="text" class="form-control" id="authors" name="authors" value="{{ book.authors }}">
+      </div>
+
+      <div class="form-group">
+        <label for="year">Year</label>
+        <input type="text" class="form-control" id="year" name="year" value="{{ book.publish_date }}">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea class="form-control" id="description" name="description">{{ book.subjects }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="openlibrary_preview_url">Preview URL</label>
+        <input type="url" class="form-control" id="openlibrary_preview_url" name="openlibrary_preview_url" value="{{ book.openlibrary_preview_url }}">
+      </div>
+
+      <div class="form-group">
+        <label for="thumbnail_url">Thumbnail URL</label>
+        <input type="url" class="form-control" id="thumbnail_url" name="thumbnail_url" value="{{ book.openlibrary_medcover_url }}">
+      </div>
+
+      <div class="form-group">
+        <label for="number_of_pages">Number of Pages</label>
+        <input type="number" class="form-control" id="number_of_pages" name="number_of_pages" value="{{ book.number_of_pages }}">
+      </div>
+
+      <div class="form-group">
+        <label for="location">Location</label>
+        <select class="form-control" id="location" name="location">
+          <option value="-1">-- Select Location --</option>
+          {% for location in locations %}
+            <option value="{{ location[0] }}" {% if book.location == location[0] %}selected{% endif %}>
+              {{ location[1] }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group d-flex justify-content-between">
+        <button type="submit" name="submit_book" class="btn btn-success">Save Changes</button>
+    </form>
+
+        <form method="POST" action="{{ url_for('delete_book', id=book.id) }}" onsubmit="return confirm('Are you sure you want to delete this book?');">
+          <button type="submit" class="btn btn-danger">Delete Book</button>
+        </form>
+      </div>
+
+  </div>
+</div>
+
+{% if book.openlibrary_preview_url %}
+<div class="row">
+  <div class="col-xs-8 col-xs-offset-2">
+      <h3><a href="{{ book.openlibrary_preview_url }}" target="_blank">Click to preview the book on Open Library(maybe even borrow it as an ebook)</a></h3>
+  </div>
+</div>
+{% endif %}
+
+{% if book.openlibrary_medcover_url %}
+<div class="row">
+  <div class="col-xs-8 col-xs-offset-2">
+    <h4>Book Thumbnail Preview</h4>
+    <img src="{{ book.openlibrary_medcover_url }}" alt="Book Thumbnail" style="max-width: 100%; height: auto;">
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
